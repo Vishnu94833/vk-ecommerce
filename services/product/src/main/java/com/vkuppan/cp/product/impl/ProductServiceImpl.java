@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.vkuppan.cp.product.dto.ProductPurchaseRequest;
+import com.vkuppan.cp.product.dto.ProductPurchaseResponse;
 import com.vkuppan.cp.product.dto.ProductRequest;
 import com.vkuppan.cp.product.dto.ProductResponse;
+import com.vkuppan.cp.product.exception.ProductPurchaseException;
 import com.vkuppan.cp.product.repository.ProductRepository;
 import com.vkuppan.cp.product.service.ProductService;
 import com.vkuppan.cp.product.util.ProductUtil;
@@ -36,45 +38,38 @@ public class ProductServiceImpl implements ProductService
         return productRepository.save(product).getId();
     }
 
-
     @Override
-    public ProductResponse findById(Integer id) {
-        return productRepository.findById(id)
-                .map(productUtil::toProductResponse)
+    public ProductResponse findById(Integer id)
+    {
+        return productRepository.findById(id).map(productUtil::toProductResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found with ID:: " + id));
     }
 
     @Override
-    public List<ProductResponse> findAll() {
-        return productRepository.findAll()
-                .stream()
-                .map(productUtil::toProductResponse)
-                .collect(Collectors.toList());
+    public List<ProductResponse> findAll()
+    {
+        return productRepository.findAll().stream().map(productUtil::toProductResponse).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ArrayList<Object> purchaseProducts(
-            List<ProductPurchaseRequest> request
-    ) throws Exception
+    public ArrayList<ProductPurchaseResponse> purchaseProducts(List<ProductPurchaseRequest> request)
     {
-        var productIds = request
-                .stream()
-                .map(ProductPurchaseRequest::productId)
-                .toList();
+        var productIds = request.stream().map(ProductPurchaseRequest::productId).toList();
         var storedProducts = productRepository.findAllByIdInOrderById(productIds);
-        if (productIds.size() != storedProducts.size()) {
-            throw new Exception("One or more products does not exist");
+        if (productIds.size() != storedProducts.size())
+        {
+            throw new ProductPurchaseException("One or more products does not exist");
         }
-        var sortedRequest = request
-                .stream()
-                .sorted(Comparator.comparing(ProductPurchaseRequest::productId))
-                .toList();
-        var purchasedProducts = new ArrayList<>();
-        for (int i = 0; i < storedProducts.size(); i++) {
+        var sortedRequest = request.stream().sorted(Comparator.comparing(ProductPurchaseRequest::productId)).toList();
+        var purchasedProducts = new ArrayList<ProductPurchaseResponse>();
+        for (int i = 0; i < storedProducts.size(); i++)
+        {
             var product = storedProducts.get(i);
             var productRequest = sortedRequest.get(i);
-            if (product.getAvailableQuantity() < productRequest.quantity()) {
-                throw new Exception("Insufficient stock quantity for product with ID:: " + productRequest.productId());
+            if (product.getAvailableQuantity() < productRequest.quantity())
+            {
+                throw new ProductPurchaseException(
+                        "Insufficient stock quantity for product with ID:: " + productRequest.productId());
             }
             var newAvailableQuantity = product.getAvailableQuantity() - productRequest.quantity();
             product.setAvailableQuantity(newAvailableQuantity);

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vkuppan.cp.product.dto.ProductPurchaseRequest;
+import com.vkuppan.cp.product.dto.ProductPurchaseResponse;
 import com.vkuppan.cp.product.dto.ProductRequest;
 import com.vkuppan.cp.product.dto.ProductResponse;
 import com.vkuppan.cp.product.service.ProductService;
@@ -35,7 +36,7 @@ public class ProductController
     }
 
     @PostMapping("/purchase")
-    public ResponseEntity<ArrayList<Object>> purchaseProducts(@RequestBody @Valid List<ProductPurchaseRequest> productRequest)
+    public ResponseEntity<ArrayList<ProductPurchaseResponse>> purchaseProducts(@RequestBody @Valid List<ProductPurchaseRequest> productRequest)
             throws Exception
     {
         return ResponseEntity.ok(productService.purchaseProducts(productRequest));
